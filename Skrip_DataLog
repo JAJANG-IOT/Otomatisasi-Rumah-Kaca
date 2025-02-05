@@ -1,0 +1,118 @@
+function doGet(e) {
+  Logger.log(JSON.stringify(e));
+  var result = 'Ok';
+  if (Object.keys(e.parameter).length === 0) {
+    result = 'No Parameters';
+  } else {
+    var sheet_id = '1iSAPueb3yasN9MWCEmfJJne3aiVTSPGM3HreJ0drAiQ'; // Spreadsheet ID
+    var spreadsheet = SpreadsheetApp.openById(sheet_id);
+    var sheet = getOrCreateSheet(spreadsheet);
+
+    var newRow = sheet.getLastRow() + 1;
+    var rowData = [];
+    var Curr_Date = new Date();
+    rowData[0] = Curr_Date;
+    var Curr_Time = Utilities.formatDate(Curr_Date, "Asia/Jakarta", 'HH:mm:ss');
+    rowData[1] = Curr_Time;
+    var resultMessages = [];
+
+    for (var param in e.parameter) {
+      Logger.log('In for loop, param=' + param);
+      var value = stripQuotes(e.parameter[param]);
+      Logger.log(param + ':' + value);
+      switch (param) {
+        case 'temperature':
+          rowData[2] = value; // Temperature in column C
+          resultMessages.push('Temperature Written on column C');
+          break;
+        case 'humidity':
+          rowData[3] = value; // Humidity in column D
+          resultMessages.push('Humidity Written on column D');
+          break;
+        case 'temptanah':
+          rowData[4] = value; // Suhu Tanah in column E
+          resultMessages.push('Suhu Tanah Written on column E');
+          break;
+        case 'humitanah':
+          rowData[5] = value; // Kelembaban Tanah in column F
+          resultMessages.push('Kelembaban Tanah Written on column F');
+          break;
+        case 'relay1':
+          rowData[6] = value; // Relay 1 in column G
+          resultMessages.push('Relay 1 Written on column G');
+          break;
+        case 'relay2':
+          rowData[7] = value; // Relay 2 in column H
+          resultMessages.push('Relay 2 Written on column H');
+          break;
+        case 'tanahkiri':
+          rowData[8] = value; // Sensor 1 (KIRI) in column I
+          resultMessages.push('Sensor 1 (KIRI) Written on column I');
+          break;
+        case 'tanahkanan':
+          rowData[9] = value; // Sensor 2 (KANAN) in column J
+          resultMessages.push('Sensor 2 (KANAN) Written on column J');
+          break;
+        case 'suhukiri':
+          rowData[10] = value; // Suhu 1 (KIRI) in column K
+          resultMessages.push('Suhu 1 (KIRI) Written on column K');
+          break;
+        case 'suhukanan':
+          rowData[11] = value; // Suhu 2 (KANAN) in column L
+          resultMessages.push('Suhu 2 (KANAN) Written on column L');
+          break;
+        case 'soil1':
+          rowData[12] = value; // soil1 (KIRI) in column Y
+          resultMessages.push('soil2 (KANAN) Written on column Y');
+          break;
+        case 'soil2':
+          rowData[13] = value; // soil2 (KANAN) in column Z
+          resultMessages.push('soil2 (KANAN) Written on column Z');
+          break;  
+        default:
+          resultMessages.push("unsupported parameter: " + param);
+      }
+    }
+
+    // Fill in empty values for any missing columns
+    for (var i = 2; i < 14; i++) {
+      if (rowData[i] === undefined) {
+        rowData[i] = '';
+      }
+    }
+
+    // Convert numeric values in column G to ON/OFF
+    if (rowData[6] !== undefined) {
+      rowData[6] = (rowData[6] == 1) ? 'ON' : 'OFF';
+    }
+
+    // Convert numeric values in column H to ON/OFF
+    if (rowData[7] !== undefined) {
+      rowData[7] = (rowData[7] == 1) ? 'ON' : 'OFF';
+    }
+
+    Logger.log(JSON.stringify(rowData));
+    var newRange = sheet.getRange(newRow, 1, 1, rowData.length);
+    newRange.setValues([rowData]);
+
+    result = resultMessages.join(' ,');
+  }
+  return ContentService.createTextOutput(result);
+}
+
+function stripQuotes(value) {
+  return value.replace(/^["']|['"]$/g, "");
+}
+
+function getOrCreateSheet(spreadsheet) {
+  var sheets = spreadsheet.getSheets();
+  var sheet = sheets[sheets.length - 1];
+
+  // Check if the current sheet has reached 3000 rows
+  if (sheet.getLastRow() >= 3000) {
+    var sheetName = "Sheet" + (sheets.length + 1);
+    sheet = spreadsheet.insertSheet(sheetName);
+  }
+
+  return sheet;
+}
